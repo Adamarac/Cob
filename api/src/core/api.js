@@ -2,12 +2,12 @@ import cors from "cors";
 import http from "node:http";
 import rateLimit from "express-rate-limit";
 import { setGlobalDispatcher, ProxyAgent } from "undici";
-import { getCommit, getBranch, getRemote, getVersion } from "@imput/version-info";
+import { getCommit, getBranch, getVersion } from "@imput/version-info";
 
 import jwt from "../security/jwt.js";
 import stream from "../stream/stream.js";
 import match from "../processing/match.js";
-
+import fs from 'fs/promises';
 import { env, isCluster, setTunnelPort } from "../config.js";
 import { extract } from "../processing/url.js";
 import { Green, Bright, Cyan } from "../misc/console-text.js";
@@ -20,6 +20,20 @@ import { verifyStream, getInternalStream } from "../stream/manage.js";
 import { createResponse, normalizeRequest, getIP } from "../processing/request.js";
 import * as APIKeys from "../security/api-keys.js";
 import * as Cookies from "../processing/cookie/manager.js";
+
+async function getRemote() {
+  try {
+    const config = await fs.readFile('/opt/render/project/src/.git/config', 'utf-8');
+    // Processa informações do Git aqui
+    return config;
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      console.warn('Arquivo .git/config não encontrado. Ignorando...');
+      return null; // ou valores padrão
+    }
+    throw error; // Lança outros erros
+  }
+}
 
 const git = {
     branch: await getBranch(),
